@@ -34,20 +34,20 @@ function formatDay(dateStr) {
 }
 
 class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      location: "Silvassa",
-      isLoading: false,
-      displayLocation: "",
-      weather: {},
-    };
-    this.fetchWeather = this.fetchWeather.bind(this);
-  }
+  state = {
+    location: "",
+    isLoading: false,
+    displayLocation: "",
+    weather: {},
+  };
 
-  async fetchWeather() {
+  // Arrow function do not loose their binding to this keyword
+  // async fetchWeather() {
+  fetchWeather = async () => {
+    if (this.state.location.length < 3) return this.setState({ weather: {} });
     try {
       this.setState({ isLoading: true });
+
       // 1) Getting location (geocoding)
       const geoRes = await fetch(
         `https://geocoding-api.open-meteo.com/v1/search?name=${this.state.location}`
@@ -69,9 +69,26 @@ class App extends React.Component {
       const weatherData = await weatherRes.json();
       this.setState({ weather: weatherData.daily });
     } catch (err) {
-      if (err) throw new Error("Location not found");
+      console.log();
     } finally {
       this.setState({ isLoading: false });
+    }
+  };
+
+  setLocation = e => this.setState({ location: e.target.value });
+
+  // useEffect []
+  componentDidMount() {
+    // this.fetchWeather();
+    this.setState({ location: localStorage.getItem("location") || "" });
+  }
+
+  // useEffect [location]
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.location !== prevState.location) {
+      this.fetchWeather();
+
+      localStorage.setItem("location", this.state.location);
     }
   }
 
@@ -79,18 +96,18 @@ class App extends React.Component {
     return (
       <div className='app'>
         <h1>Classy Weather</h1>
-        <div>
-          <input
-            type='text'
-            placeholder='Search from location...'
-            value={this.state.location}
-            onChange={e => this.setState({ location: e.target.value })}
-          />
-        </div>
-        <button onClick={this.fetchWeather} className='btn'>
-          Get Weather
+        <Input
+          location={this.state.location}
+          onChangeLocation={this.setLocation}
+        />
+
+        <button
+          onClick={this.fetchWeather}
+          className='btn'
+          disabled={this.state.isLoading}
+        >
+          {this.state.isLoading ? "Loading..." : "Get Weather"}
         </button>
-        {this.state.isLoading && <p className='loader'>Loading...</p>}
         {this.state.weather.weathercode && (
           <Weather
             weather={this.state.weather}
@@ -103,6 +120,21 @@ class App extends React.Component {
 }
 
 export default App;
+
+class Input extends React.Component {
+  render() {
+    return (
+      <div>
+        <input
+          type='text'
+          placeholder='Search from location...'
+          value={this.props.location}
+          onChange={this.props.onChangeLocation}
+        />
+      </div>
+    );
+  }
+}
 
 class Weather extends React.Component {
   render() {
@@ -134,7 +166,6 @@ class Weather extends React.Component {
 
 class Day extends React.Component {
   render() {
-    // eslint-disable-next-line react/prop-types
     const { date, min, max, codes, isToday } = this.props;
     return (
       <li className='day'>

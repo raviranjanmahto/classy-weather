@@ -96,8 +96,3 @@ input:focus {
   background-color: #ecc5c0;
   outline: 2px solid #222;
 }
-
-.loader {
-  font-size: 2.4rem;
-  font-weight: 700;
-}
